@@ -179,15 +179,21 @@ def calculate(string: str, mem: dict, tokens: list = []) -> tuple[float | int, d
             case ":MEM":
                 tokens.pop()
                 tokens.append(mem)
+                
+                x = 0
             case ":DEL":
                 mem.pop(tokens.pop(), None)
                 tokens.pop()
+                
+                x = 0
             case ":DEFINE":
                 tokens.pop(x)
                 temp = []
                 while len(tokens) >= 2:
                     temp.append(tokens.pop())
                 mem[tokens.pop()] = temp
+
+                x = 0
             case ":RUN":
                 tokens.pop(x)
 
@@ -198,7 +204,7 @@ def calculate(string: str, mem: dict, tokens: list = []) -> tuple[float | int, d
                 mem["x"] = left
                 mem["y"] = right
 
-                tokens.append(parse(tokens.pop(), mem))
+                tokens.insert(x - 3, parse(tokens.pop(x - 3), mem))
 
                 x = 0
             case _:
