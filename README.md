@@ -34,4 +34,14 @@ calc 2000 > res
 3
 ```
 
+If you want to remove a variable or undefine a function do as follows:
+
+```
+calc 2000 > :DEL a
+0
+```
+
+In order to view the memory type `:MEM`
+
+
 The calculator is simple and messy as I did not use any tutorial, just the two wikipedia pages that explain the algorithm and my brain :)
