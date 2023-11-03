@@ -170,7 +170,7 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
     x = 0
 
     while True:
-        print("MEM START: ", tokens, x, mem, temp_mem, main_use)
+        # print("MEM START: ", tokens, x, mem, temp_mem, main_use)
 
         if tokens == []:
             tokens = [0]
@@ -303,7 +303,7 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
                         new, mem, temp_mem = parse(token, mem, temp_mem, main_use=main_use)
                         tokens.append(new)
 
-        print("MEM END:   ", tokens, x, mem, temp_mem, main_use)
+        # print("MEM END:   ", tokens, x, mem, temp_mem, main_use)
 
         x += 1
         if x > len(tokens) - 1:
