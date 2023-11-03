@@ -1,32 +1,48 @@
-import copy
+import math
+
+def is_number(token: str):
+    return any(x in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."] for x in list(token))
+def is_string(token: str):
+    return any(x in [" ", ":", "_", "A", "a", "B", "b", "C", "c", "D", "d", "E", "e", "F", "f", "G", "g", "H", "h", "I", "i", "J", "j", "K", "k", "L", "l", "M", "m", "N", "n", "O", "o", "P", "p", "Q", "q", "R", "r", "S", "s", "T", "t", "U", "u", "V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"] for x in list(token))
 
 def tokenizer(string: str) -> list[str]:
     tokens = []
 
     val = ""
 
-    for key, x in enumerate(list(string)):
-        match x:
+    in_string = False
+
+    for point in range(len(string)):
+        match string[point]:
             case " ":
-                if val != "":
-                    tokens.append(val)
-                val = ""
+                if in_string:
+                    val += " "
+                else:
+                    if val != "":
+                        tokens.append(val)
+                    val = ""
             case "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0" | ".":
-                val += x
+                val += string[point]
             case "-" | "+" | "*" | "/" | "%" | "^" | "(" | ")":
                 if val != "":
                     tokens.append(val)
                 val = ""
-                if x == "-" and len(list(string)) > key + 1 and list(string)[key + 1] in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "π"]:
+                if string[point] == "-" and len(list(string)) > point + 1 and list(string)[point + 1] in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "π"]:
                     val = "-"
                 else:
-                    tokens.append(x)
+                    tokens.append(string[point])
             case "π":
-                tokens.append(x)
+                tokens.append(string[point])
             case ":" | "_" | "A" | "a" | "B" | "b" | "C" | "c" | "D" | "d" | "E" | "e" | "F" | "f" | "G" | "g" | "H" | "h" | "I" | "i" | "J" | "j" | "K" | "k" | "L" | "l" | "M" | "m" | "N" | "n" | "O" | "o" | "P" | "p" | "Q" | "q" | "R" | "r" | "S" | "s" | "T" | "t" | "U" | "u" | "V" | "v" | "W" | "w" | "X" | "x" | "Y" | "y" | "Z" | "z":
-                val += x
+                val += string[point]
             case "=":
                 tokens.append("=")
+            case "\"":
+                in_string = not in_string
+            case "\\":
+                if len(list(string)) > point + 1 and list(string)[point + 1] == "\"":
+                    in_string = not in_string
+                    val += "\\"
 
     tokens.append(val)
 
@@ -41,7 +57,7 @@ def associative(op):
 
 def precedence(op):
     match op:
-        case "^" | ":POW":
+        case "^" | "POW":
             return 4
         case "*" | "/" | "%" | ":MULTI" | ":DIV" | ":MOD":
             return 3
@@ -53,15 +69,12 @@ def rpn(tokens: list[str]) -> list[str]:
     output = []
     operators = []
 
-    for token in tokens:
-        is_number = any(x in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."] for x in list(token))
-        is_string = any(x in [":", "_", "A", "a", "B", "b", "C", "c", "D", "d", "E", "e", "F", "f", "G", "g", "H", "h", "I", "i", "J", "j", "K", "k", "L", "l", "M", "m", "N", "n", "O", "o", "P", "p", "Q", "q", "R", "r", "S", "s", "T", "t", "U", "u", "V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"] for x in list(token))
-        
-        if is_number:
+    for token in tokens:        
+        if is_string(token) and (not token.startswith(":") or token in [":MEM", ":DEL", ":DEFINE"]):
             output.append(token)
-        if is_string and (not token.startswith(":") or token in [":MEM", ":DEL", ":DEFINE"]):
+        if is_number(token) and not is_string(token):
             output.append(token)
-        if is_string and token in [":RUN"]:
+        if is_string(token) and token in [":RUN", ":AT", ":LEN"]:
             operators.append(token)
 
         match token:
@@ -76,8 +89,8 @@ def rpn(tokens: list[str]) -> list[str]:
                     output.append(operators.pop())
                 if len(operators) != 0 and operators[-1] == "(":
                     operators.pop()
-            case "π":
-                output.append(token)
+            case "π" | ":PI":
+                output.append(float(math.pi))
             case "=":
                 operators.append(token)
 
@@ -107,20 +120,28 @@ def parse(token: str | float | int, mem: dict, temp_mem: dict, main_use: bool = 
     if main_use:
         if token in mem and type(mem[token]) == list:
             temp = calculate("", mem, temp_mem, list(reversed(mem[token])), False)
-        if type(token) != int and type(token) != float and token not in mem and any(x in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."] for x in list(token)):
+        elif token not in mem and type(token) == str and is_string(token):
+            temp = token, mem, temp_mem
+        elif token in mem and type(mem[token]) == str and is_string(mem[token]):
+            temp = mem[token], mem, temp_mem
+        elif type(token) != int and type(token) != float and token not in mem and is_number(token):
             temp = float(token) if "." in list(token) else int(token), mem, temp_mem
-        if token in mem and type(mem[token]) == str:
+        elif token in mem and type(mem[token]) == str:
             temp = float(mem[token]) if "." in list(mem[token]) else int(mem[token]), mem, temp_mem
-        if token in mem and type(mem[token]) != str and replace:
+        elif token in mem and type(mem[token]) != str and replace:
             temp = mem[token], mem, temp_mem
     else:
         if token in temp_mem and type(temp_mem[token]) == list:
             temp = calculate("", mem, temp_mem, list(reversed(mem[token])))
-        if type(token) != int and type(token) != float and token not in temp_mem and any(x in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."] for x in list(token)):
+        elif token not in temp_mem and type(token) == str and is_string(token):
+            temp = token, mem, temp_mem
+        elif token in temp_mem and type(temp_mem[token]) == str and is_string(temp_mem[token]):
+            temp = temp_mem[token], mem, temp_mem
+        elif type(token) != int and type(token) != float and token not in temp_mem and is_number(token):
             temp = float(token) if "." in list(token) else int(token), mem, temp_mem
-        if token in temp_mem and type(temp_mem[token]) == str:
+        elif token in temp_mem and type(temp_mem[token]) == str:
             temp = float(temp_mem[token]) if "." in list(temp_mem[token]) else int(temp_mem[token]), mem, temp_mem
-        if token in temp_mem and type(temp_mem[token]) != str and replace:
+        elif token in temp_mem and type(temp_mem[token]) != str and replace:
             temp = temp_mem[token], mem, temp_mem
 
     return temp
@@ -139,8 +160,6 @@ def parse_command(token: str) -> str:
             return "%"
         case ":POW":
             return "^"
-        case _:
-            return "+"
 
 def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = [], main_use: bool = True) -> tuple[float | int, dict, dict]:
     if tokens == []:
@@ -151,7 +170,7 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
     x = 0
 
     while True:
-        # print("MEM START: ", tokens, x, mem, temp_mem, main_use)
+        print("MEM START: ", tokens, x, mem, temp_mem, main_use)
 
         if tokens == []:
             tokens = [0]
@@ -193,15 +212,14 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
                 temp = []
                 while len(tokens) >= 2:
                     token = tokens.pop()
-                    is_string = any(x in [":", "_", "A", "a", "B", "b", "C", "c", "D", "d", "E", "e", "F", "f", "G", "g", "H", "h", "I", "i", "J", "j", "K", "k", "L", "l", "M", "m", "N", "n", "O", "o", "P", "p", "Q", "q", "R", "r", "S", "s", "T", "t", "U", "u", "V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"] for x in list(token))
 
                     if main_use:
-                        if is_string and token not in mem:
+                        if is_string(token) and token not in mem:
                             if f"{tokens[0]}_meta" not in mem:
                                 mem[f"{tokens[0]}_meta"] = []
                             mem[f"{tokens[0]}_meta"].append(token)
                     else:
-                        if is_string and token not in temp_mem:
+                        if is_string(token) and token not in temp_mem:
                             if f"{tokens[0]}_meta" not in temp_mem:
                                 mem[f"{tokens[0]}_meta"] = []
                             mem[f"{tokens[0]}_meta"].append(token)
@@ -247,6 +265,18 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
                     tokens.append(num)
 
                 x = 0
+            case ":AT":
+                tokens.pop(x)
+
+                point = int(tokens.pop(x - 1))
+
+                tokens.append(tokens.pop(x - 2)[point])
+
+                x = 0
+            case ":LEN":
+                tokens.pop(x)
+
+                tokens.append(len(tokens.pop(x -1 )))
             case _:
                 if type(tokens[x]) == str and tokens[x].startswith(":"):
                     token = tokens.pop(x)
@@ -260,22 +290,20 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
                     x = 0
 
         if len(tokens) == 1:
-            is_string = type(tokens[0]) == str and any(x in [":", "_", "A", "a", "B", "b", "C", "c", "D", "d", "E", "e", "F", "f", "G", "g", "H", "h", "I", "i", "J", "j", "K", "k", "L", "l", "M", "m", "N", "n", "O", "o", "P", "p", "Q", "q", "R", "r", "S", "s", "T", "t", "U", "u", "V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"] for x in list(tokens[0]))
-
             if main_use:
-                if is_string:
+                if type(tokens[0]) == str and is_string(tokens[0]):
                     if tokens[0] in mem:
                         token = tokens.pop()
                         new, mem, temp_mem = parse(token, mem, temp_mem, main_use=main_use)
                         tokens.append(new)
             else:
-                if is_string:
+                if type(tokens[0]) == str and is_string(tokens[0]):
                     if tokens[0] in temp_mem:
                         token = tokens.pop()
                         new, mem, temp_mem = parse(token, mem, temp_mem, main_use=main_use)
                         tokens.append(new)
 
-        # print("MEM END:   ", tokens, x, mem, temp_mem, main_use)
+        print("MEM END:   ", tokens, x, mem, temp_mem, main_use)
 
         x += 1
         if x > len(tokens) - 1:
@@ -293,12 +321,11 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
 
 def main():
     mem = {}
-    temp_mem = {}
 
     while True:
         inp = input("calc 2000 > ")
 
-        res, mem, temp_mem = calculate(inp, mem, temp_mem)
+        res, mem, _ = calculate(inp, mem, {})
 
         print(res)
 
