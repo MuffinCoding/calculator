@@ -3,7 +3,7 @@ import math
 def is_number(token: str):
     return any(x in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."] for x in list(token))
 def is_string(token: str):
-    return any(x in [" ", ":", "_", "A", "a", "B", "b", "C", "c", "D", "d", "E", "e", "F", "f", "G", "g", "H", "h", "I", "i", "J", "j", "K", "k", "L", "l", "M", "m", "N", "n", "O", "o", "P", "p", "Q", "q", "R", "r", "S", "s", "T", "t", "U", "u", "V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"] for x in list(token))
+    return any(x in ["\"", " ", ":", "_", "A", "a", "B", "b", "C", "c", "D", "d", "E", "e", "F", "f", "G", "g", "H", "h", "I", "i", "J", "j", "K", "k", "L", "l", "M", "m", "N", "n", "O", "o", "P", "p", "Q", "q", "R", "r", "S", "s", "T", "t", "U", "u", "V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"] for x in list(token))
 
 def tokenizer(string: str) -> list[str]:
     tokens = []
@@ -39,10 +39,11 @@ def tokenizer(string: str) -> list[str]:
                 tokens.append("=")
             case "\"":
                 in_string = not in_string
+                val += "\""
             case "\\":
                 if len(list(string)) > point + 1 and list(string)[point + 1] == "\"":
                     in_string = not in_string
-                    val += "\\"
+                val += "\\"
 
     tokens.append(val)
 
@@ -121,7 +122,7 @@ def parse(token: str | float | int, mem: dict, temp_mem: dict, main_use: bool = 
         if token in mem and type(mem[token]) == list:
             temp = calculate("", mem, temp_mem, list(reversed(mem[token])), False)
         elif token not in mem and type(token) == str and is_string(token):
-            temp = token, mem, temp_mem
+            temp = token[1:-1], mem, temp_mem
         elif token in mem and type(mem[token]) == str and is_string(mem[token]):
             temp = mem[token], mem, temp_mem
         elif type(token) != int and type(token) != float and token not in mem and is_number(token):
@@ -134,7 +135,7 @@ def parse(token: str | float | int, mem: dict, temp_mem: dict, main_use: bool = 
         if token in temp_mem and type(temp_mem[token]) == list:
             temp = calculate("", mem, temp_mem, list(reversed(mem[token])))
         elif token not in temp_mem and type(token) == str and is_string(token):
-            temp = token, mem, temp_mem
+            temp = token[1:-1], mem, temp_mem
         elif token in temp_mem and type(temp_mem[token]) == str and is_string(temp_mem[token]):
             temp = temp_mem[token], mem, temp_mem
         elif type(token) != int and type(token) != float and token not in temp_mem and is_number(token):
