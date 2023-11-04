@@ -1,8 +1,9 @@
 import math
 
-def is_number(token: str):
+def is_number(token: str) -> bool:
     return any(x in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."] for x in list(token))
-def is_string(token: str):
+
+def is_string(token: str) -> bool:
     return any(x in ["\"", " ", ":", "_", "A", "a", "B", "b", "C", "c", "D", "d", "E", "e", "F", "f", "G", "g", "H", "h", "I", "i", "J", "j", "K", "k", "L", "l", "M", "m", "N", "n", "O", "o", "P", "p", "Q", "q", "R", "r", "S", "s", "T", "t", "U", "u", "V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"] for x in list(token))
 
 def tokenizer(string: str) -> list[str]:
@@ -70,7 +71,7 @@ def rpn(tokens: list[str]) -> list[str]:
     output = []
     operators = []
 
-    for token in tokens:        
+    for token in tokens:
         if is_string(token) and (not token.startswith(":") or token in [":MEM", ":DEL", ":DEFINE"]):
             output.append(token)
         if is_number(token) and not is_string(token):
@@ -271,13 +272,23 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
 
                 point = int(tokens.pop(x - 1))
 
-                tokens.append(tokens.pop(x - 2)[point])
+                tokens.insert(x - 2, len(tokens.pop(x - 2)[1:-1][point]))
 
                 x = 0
             case ":LEN":
                 tokens.pop(x)
 
-                tokens.append(len(tokens.pop(x -1 )))
+                val = tokens.pop(x - 1)
+
+                if type(val) != str:
+                    val = str(val)
+
+                if val[0] == "\"" and val[-1] == "\"":
+                    tokens.insert(x - 1, len(val[1:-1]))
+                else:
+                    tokens.insert(x - 1, len(val))
+                    
+                x = 0
             case _:
                 if type(tokens[x]) == str and tokens[x].startswith(":"):
                     token = tokens.pop(x)
@@ -322,9 +333,22 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
 
 def main():
     mem = {}
+    lines = []
 
     while True:
-        inp = input("calc 2000 > ")
+        inp = ""
+        if lines == []:
+            inp = input("calc 2000 > ")
+        else:
+            line = lines.pop(0).rstrip("\r\n")
+            print(f"calc 2000 > {line}")
+            inp = line
+
+        if inp.startswith(":LOAD "):
+            with open(inp[6:], "r", encoding="utf-8") as file:
+                lines = file.readlines()
+
+            continue
 
         res, mem, _ = calculate(inp, mem, {})
 
