@@ -272,7 +272,12 @@ def calculate(string_to_parse: str, mem: dict, temp_mem: dict, tokens: list = []
 
                 point = int(tokens.pop(x - 1))
 
-                tokens.insert(x - 2, len(tokens.pop(x - 2)[1:-1][point]))
+                token = mem[tokens.pop(x - 2)]
+
+                if token[0] == "\"" and token[-1] == "\"":
+                    tokens.insert(x - 2, token[1:-1][point])
+                else:
+                    tokens.insert(x - 2, token[point])
 
                 x = 0
             case ":LEN":

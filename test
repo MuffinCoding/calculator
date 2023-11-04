@@ -5,3 +5,9 @@ a + b
 c
 π
 :PI
+a = "asd ASD asd"
+:MEM
+a :AT 1
+a = "123"
+:MEM
+a :AT 1
